@@ -6,9 +6,6 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, eval = FALSE)
-
-library(knitr)
 library(caret)
 library(rpart)
 library(rpart.plot)
@@ -118,9 +115,89 @@ validation <- train_pml[-inTrain,]
 ```
 Let's see which variables are strongly correlated.
 
-```{r, echo=TRUE, message=FALSE, eval=TRUE}
+```{r, echo=TRUE, message=FALSE, eval=FALSE}
 library(dplyr)
-train_cor <- select(train, -49)
-cor_matrix <- cor(train_cor)
-corrplot(cor_matrix, order = "FPC", method = "color", type = "lower", tl.cex = 0.6, tl.col = rgb(0,0,0))
+cor_matrix <- cor(train[,-49])
+corrplot(cor_matrix, order = "alphabet", method = "square", type = "lower", tl.cex = 0.6, tl.col = rgb(0,0,0))
+```
+
+![Correlation matrix](corplot.png)
+
+Since there are only a few strong correlations, PCA will not be applied and I will move forward with the train and validation datasets
+
+## 3. Model building
+
+Three ML methods will be applied: Random forest, a generalized boosted model, and a decision tree model. Finally, all three models will be combined to see if their combination produces even better results.
+
+### Random forest
+
+```{r, random forest, eval=FALSE, message=FALSE, echo=TRUE}
+set.seed(666) # for reproducability
+
+rf_control <- trainControl(method = "cv", number = 3, verboseIter = FALSE) # crossvalidation will be used
+
+mod_rf <- train(classe ~ ., data = train, method = "rf", trControl = rf_control)
+
+mod_rf$finalModel
+
+```
+
+Prediction on validation set
+
+```{r, RF val, eval=FALSE, message=FALSE, echo=TRUE}
+
+predict_rf <- predict(mod_rf, newdata=validation)
+conf_mat_rf <- confusionMatrix(predict_rf, validation$classe)
+conf_mat_rf
+```
+
+### Generalized boosted model
+
+```{r, GBM val, eval=FALSE, message=FALSE, echo=TRUE}
+
+gbm_control <- trainControl(method = "repeatedcv", number = 5, repeats = 1) # repeated crossvalidation
+mod_gbm <- train(classe ~ ., data = validation, method = "gbm", trControl = gbm_control, verbose = FALSE)
+
+mod_gbm$finalModel
+```
+
+Prediction on validation set
+
+```{r, GBM pred, eval=FALSE, message=FALSE, echo=TRUE}
+
+predict_gbm <- predict(mod_gbm, newdata=validation)
+conf_mat_gbm <- confusionMatrix(predict_gbm, validation$classe)
+conf_mat_gbm
+```
+
+### Decision tree model
+
+```{r, message=FALSE, echo=TRUE}
+
+mod_dt <- rpart(classe ~ ., data = train, method = "class")
+
+fancyRpartPlot(mod_dt, main = "Decision Tree", sub = "Classe ~ all vars")
+```
+
+Prediction on validation set
+
+```{r, dt predict, message=FALSE, echo=TRUE}
+
+predict_dt <- predict(mod_dt, newdata=validation, type="class")
+conf_mat_dt <- confusionMatrix(predict_dt, validation$classe)
+conf_mat_dt
+```
+
+### 4. Outcome
+
+We can see that the Random Forest outperforms both the gbm and the decision tree in terms of accuracy (0.9893 vs. 0.9602, and 0.6658 respectively) - the latter performs worst.
+
+### 5. Applying mod_rf to our testing set
+
+The Random Forest model will be applied to predict the 20 quiz results (testing dataset):
+
+```{r, quiz prediction, eval=TRUE, message=FALSE, echo=TRUE}
+
+predict_test <- predict(mod_rf, newdata=test_pml)
+predict_test
 ```
