@@ -5,7 +5,7 @@ date: "March 18, 2017"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup}
 library(caret)
 library(rpart)
 library(rpart.plot)
@@ -19,11 +19,11 @@ In this project, I will predict the manner, in which an exercise was executed (A
 
 ## First, we have to read in the data.
 
-```{r DataReadIn, eval=FALSE, message=FALSE, echo=TRUE}
+```{r DataReadIn, eval=TRUE, message=FALSE, echo=TRUE}
 
-train_pml0 <- read.csv("./MachineLearningProject/pml-training.csv", header = TRUE, na.strings = c("NA", ""))
+train_pml0 <- read.csv("./pml-training.csv", header = TRUE, na.strings = c("NA", ""))
 
-test_pml <- read.csv("./MachineLearningProject/pml-testing.csv", header = TRUE, na.strings = c("NA", ""))
+test_pml <- read.csv("./pml-testing.csv", header = TRUE, na.strings = c("NA", ""))
 ```
 
 Having read in the data, we need to do some data cleaning first (it is important to remember to apply the same steps to the testing set later!!).
@@ -172,7 +172,7 @@ conf_mat_gbm
 
 ### Decision tree model
 
-```{r, message=FALSE, echo=TRUE}
+```{r, eval = FALSE, echo=TRUE, include= TRUE}
 
 mod_dt <- rpart(classe ~ ., data = train, method = "class")
 
@@ -181,7 +181,7 @@ fancyRpartPlot(mod_dt, main = "Decision Tree", sub = "Classe ~ all vars")
 
 Prediction on validation set
 
-```{r, dt predict, message=FALSE, echo=TRUE}
+```{r, dt predict, eval = FALSE, message=FALSE, echo=TRUE}
 
 predict_dt <- predict(mod_dt, newdata=validation, type="class")
 conf_mat_dt <- confusionMatrix(predict_dt, validation$classe)
