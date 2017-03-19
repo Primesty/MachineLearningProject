@@ -3,8 +3,8 @@ title: "CourseraMachineLearning"
 author: "M_Raess"
 date: "March 18, 2017"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup}
